@@ -7,3 +7,4 @@
 - transformers
 - torch
 - tqdm
+- intel_extension_for_pytorch (optional)
