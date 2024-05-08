@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+import intel_extension_for_pytorch as ipex
 import os
 import argparse
 from tqdm import trange
@@ -170,6 +171,9 @@ def main():
     if args.save_samples:
         if not os.path.exists(args.save_samples_path):
             os.makedirs(args.save_samples_path)
+
+    model = ipex.optimize(model)
+
     while True:
         title = input("请输入文章开头？\n")
         if len(title.strip()) == 0:
