@@ -118,7 +118,7 @@ def generate(n_ctx, model, context, length, tokenizer, temperature=1, top_k=0, t
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', default='0', type=str, required=False, help='生成设备')
+    parser.add_argument('--device', default='cuda', type=str, required=False, help='生成设备')
     parser.add_argument('--length', default=182, type=int, required=False, help='生成长度')
     parser.add_argument('--batch_size', default=1, type=int, required=False, help='生成的batch size')#可以不管，在此实验中没有用处
     parser.add_argument('--nsamples', default=6, type=int, required=False, help='生成几个样本')
@@ -145,7 +145,6 @@ def main():
     else:
         from tokenization import tokenization_bert
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.device  # 此处设置程序使用哪些显卡
     length = args.length
     batch_size = args.batch_size
     nsamples = args.nsamples
@@ -154,7 +153,10 @@ def main():
     topp = args.topp
     repetition_penalty = args.repetition_penalty
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if args.device == 'cuda' and torch.cuda.is_available():
+        device = "cuda"
+    else :
+        device="cpu"
 
     tokenizer = tokenization_bert.BertTokenizer(vocab_file=args.tokenizer_path)
     model = GPT2LMHeadModel.from_pretrained(args.model_path)
