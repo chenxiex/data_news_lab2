@@ -8,3 +8,4 @@
 - torch
 - tqdm
 - intel_extension_for_pytorch (optional)
+详见conda_requirements.txt和pip_requirements.txt。请先使用conda创建环境并安装conda_requirements.txt中的包，再使用pip安装pip_requirements.txt中的包。
