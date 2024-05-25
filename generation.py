@@ -121,12 +121,12 @@ def generate(n_ctx, model, context, length, tokenizer, temperature=1, top_k=0, t
                                repitition_penalty=repitition_penalty, device=device)
 
 
-def main():
+def main(title):
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', default='cuda', type=str, required=False, help='生成设备')
     parser.add_argument('--length', default=182, type=int, required=False, help='生成长度')
     parser.add_argument('--batch_size', default=1, type=int, required=False, help='生成的batch size')#可以不管，在此实验中没有用处
-    parser.add_argument('--nsamples', default=6, type=int, required=False, help='生成几个样本')
+    parser.add_argument('--nsamples', default=1, type=int, required=False, help='生成几个样本')
     parser.add_argument('--temperature', default=1, type=float, required=False, help='生成温度')
     parser.add_argument('--topk', default=0, type=int, required=False, help='最高几选一')
     parser.add_argument('--topp', default=0.9, type=float, required=False, help='最高积累概率')
@@ -178,48 +178,43 @@ def main():
     if IPEX_AVAILABLE:
         model = ipex.optimize(model)
 
-    while True:
-        title = input("请输入文章开头？\n")
-        if len(title.strip()) == 0:
-            continue
-        raw_text = title.strip()
-        context_tokens = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(raw_text))
-        generated = 0
-        for _ in range(nsamples // batch_size):
-            out = generate(
-                n_ctx=n_ctx,
-                model=model,
-                context=context_tokens,
-                length=length,
-                is_fast_pattern=args.fast_pattern, tokenizer=tokenizer,
-                temperature=temperature, top_k=topk, top_p=topp, repitition_penalty=repetition_penalty, device=device
-            )
-            for i in range(batch_size):
-                generated += 1
-                text = tokenizer.convert_ids_to_tokens(out)
-                for i, item in enumerate(text[:-1]):  # 确保英文前后有空格
-                    if is_word(item) and is_word(text[i + 1]):
-                        text[i] = item + ' '
-                for i, item in enumerate(text):
-                    if item == '[MASK]':
-                        text[i] = ''
-                    elif item == '[CLS]':
-                        text[i] = '\n\n'
-                    elif item == '[SEP]':
-                        text[i] = '\n'
-                info = "=" * 40 + title + ": SAMPLE " + str(generated) + " : " + "=" * 40 + "\n"
-                print(info)
-                text = ''.join(text).replace('##', '').strip()
-                print(text)
-                if args.save_samples:
-                    with open(args.save_samples_path + '/samples.txt', 'a', encoding='utf8') as f:
-                        f.write(info)
-                        f.write(text)
-                        f.write('\n')
-                        f.write('=' * 90)
-                        f.write('\n' * 2)
-        print("=" * 80)
+    raw_text = title.strip()
+    context_tokens = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(raw_text))
+    generated = 0
+    result=[]
+    for _ in range(nsamples // batch_size):
+        out = generate(
+            n_ctx=n_ctx,
+            model=model,
+            context=context_tokens,
+            length=length,
+            is_fast_pattern=args.fast_pattern, tokenizer=tokenizer,
+            temperature=temperature, top_k=topk, top_p=topp, repitition_penalty=repetition_penalty, device=device
+        )
+        for i in range(batch_size):
+            generated += 1
+            text = tokenizer.convert_ids_to_tokens(out)
+            for i, item in enumerate(text[:-1]):  # 确保英文前后有空格
+                if is_word(item) and is_word(text[i + 1]):
+                    text[i] = item + ' '
+            for i, item in enumerate(text):
+                if item == '[MASK]':
+                    text[i] = ''
+                elif item == '[CLS]':
+                    text[i] = '\n\n'
+                elif item == '[SEP]':
+                    text[i] = '\n'
+            text = ''.join(text).replace('##', '').strip()
+            result=text
+            if args.save_samples:
+                with open(args.save_samples_path + '/samples.txt', 'a', encoding='utf8') as f:
+                    f.write(text)
+                    f.write('\n')
+    return result
 
 
 if __name__ == '__main__':
-    main()
+    with open('sample/news.txt','r') as f:
+        title=f.readline().strip()
+    result=main(title)
+    print(result)
